@@ -39,7 +39,7 @@ export default class App extends Component {
 
   initialize = () => {
     //INPUTS
-    App.lastY = 30;
+    App.lastY = 60;
     this.ber = parseInt(this.state.ber); //Bit Error Rate 10^-ber
 
     this.length = parseInt(this.state.length); //Package Length

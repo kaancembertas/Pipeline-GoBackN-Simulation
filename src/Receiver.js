@@ -79,8 +79,8 @@ export default class Receiver {
 
             //Draw Package
             let box = {
-                X: (this.sender.coords.X + this.coords.X) / 1.7,
-                Y: (a.fromY + a.toY) / 2 - 14
+                X: (this.sender.coords.X + consts.RECT_WIDTH / 2) - 30,
+                Y: a.toY + 5
             };
             ctx.rect(box.X - 3, box.Y - 15, 30, 20);
             ctx.font = "15px Arial";
