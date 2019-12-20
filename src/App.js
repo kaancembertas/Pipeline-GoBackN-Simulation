@@ -13,9 +13,9 @@ export default class App extends Component {
     this.state = {
       isStartedSimulation: false,
       //Inputs
-      ber: 1000,
-      length: 400,
-      pcount: 3,
+      ber: 2000,
+      length: 801,
+      pcount: 6,
       pdelay: 15,
       bandwidth: 8000,
       windowSize: 4
@@ -35,9 +35,11 @@ export default class App extends Component {
     this.initialize();
     this.startSimulatorLoop();
     this.startSendingPackages();
+
+
   }
 
-  initialize = () => {
+  initialize = (callback) => {
     //INPUTS
     App.lastY = 60;
     this.ber = parseInt(this.state.ber); //Bit Error Rate 10^-ber
@@ -51,15 +53,18 @@ export default class App extends Component {
     this.windowSize = this.state.windowSize;
 
     //Set Devices
-    this.sender = new Sender(this.propagationDelay);
-    this.receiver = new Receiver(this.propagationDelay);
+    this.sender = new Sender(this.propagationDelay, this.windowSize, this.packageCount);
+    this.receiver = new Receiver(this.propagationDelay, this.windowSize);
     this.sender.setReceiver(this.receiver);
     this.receiver.setSender(this.sender);
+
+
 
     //this.lastY = this.sender.coords.Y + consts.RECT_HEIGHT; STATIC
 
     //Time variables and Counters
-    this.timeoutCounter = 0; //(ms)
+    this.timeoutCounter = []; //(ms)
+    for (let i = 0; i < this.windowSize; i++) this.timeoutCounter.push(0);
     this.simulationTime = 0; //(ms)
     this.masterClock = 0;
 
@@ -76,7 +81,7 @@ export default class App extends Component {
     this.ctx.font = "15px Arial";
     this.ctx.fillText("Package Queue", x, y);
     y += 8;
-    this.packageQueue.forEach((p) => {
+    this.sender.packages.forEach((p) => {
       this.ctx.rect(x, y, width, height);
       this.ctx.fillText("P" + p.id, x + 10, y + height - 8);
       y += height;
@@ -117,16 +122,41 @@ export default class App extends Component {
   isPacketLoss = () => {
     if (this.bitCounter >= this.errorCounter * this.ber) {
       this.errorCounter++;
+      this.ber = 99999;
       return true;
     }
     return false;
   }
 
   startSendingPackages = () => {
-    this.sender.sendPackage(1, false, false);
-    this.sender.sendPackage(2, false, false);
-    this.sender.sendPackage(3, false, false);
-    console.log(this.sender.packages);
+    this.sendPackageLoop = setInterval(() => {
+      console.log(this.sender.yCounter);
+      if (this.receiver.acknowledges.filter(ack => !ack.loss).length === this.packageCount) {
+        clearInterval(this.sendPackageLoop);
+        this.setState({ isStartedSimulation: false });
+        return;
+      }
+
+      //Slide window
+      const index = this.sender.windowIndex;
+      for (let i = index; i < index + this.windowSize; i++) {
+        if (this.sender.windowIndex + this.windowSize !== this.packageCount && this.sender.packages[i].status === 'gotAck') {
+          this.sender.windowIndex++;
+        }
+      }
+
+      for (let i = this.sender.windowIndex; i < this.sender.windowIndex + this.windowSize; i++) {
+        if (this.sender.packages[i].status === "none") {
+          this.bitCounter += this.length;
+          this.sender.sendPackage(this.sender.packages[i].id, this.isPacketLoss(), false);
+          this.sender.packages[i].status = 'sent';
+          this.timeoutCounter[i] = 0;
+        }
+      }
+
+    }, this.propagationDelay * consts.SPEED);
+
+
   }
 
   static getY = () => {

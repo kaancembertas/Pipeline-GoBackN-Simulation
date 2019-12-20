@@ -3,18 +3,29 @@ import App from './App';
 
 export default class Sender {
 
-    constructor(propagationDelay) {
+    constructor(propagationDelay, windowSize, packageCount) {
         this.coords = {
             X: (consts.WIDTH - consts.RECT_WIDTH - consts.SPACE) / 2,
             Y: 20,
             lineX: ((consts.WIDTH - consts.RECT_WIDTH - consts.SPACE) / 2) + consts.RECT_WIDTH / 2
         }
-        this.packages = []; //Packages Sent
-        this.lastPackageSent = { id: -1 }; //Initially not exist
-        this.lastAcknowledge = { id: -1 }; //Initially not exist
+        this.packagesSent = []; //Packages Sent
+        this.packages = [];
+
+        //Set Packages Queue
+        for (let i = 0; i < packageCount; i++) {
+            this.packages.push({
+                id: i + 1,
+                status: 'none'
+            });
+        }
+
+
         this.propagationDelay = propagationDelay;
-
-
+        this.yCounter = 0;
+        this.windowSize = windowSize;
+        this.windowIndex = 0;
+        this.lastPackageSent = { id: -1, loss: false };
     }
 
     setReceiver = (r) => {
@@ -22,6 +33,7 @@ export default class Sender {
     }
 
     sendPackage = (id, loss, dublicate) => {
+        console.log(loss);
         this.lastPackageSent = {
             id: id,
             loss: loss,
@@ -29,21 +41,20 @@ export default class Sender {
             fromY: App.getY(),
             toX: this.receiver.coords.lineX,
             toY: App.getY(),
-            dublicate: dublicate
+            dublicate: dublicate,
         };
-        this.packages.push(this.lastPackageSent);
+        this.packagesSent.push(this.lastPackageSent);
 
         if (!this.lastPackageSent.loss)
             this.receiver.getPackage(this.lastPackageSent);
-        else {
-            App.getY();
-            App.getY();
-        }
+
+
 
     }
 
     getAcknowledge = (ack) => {
         this.lastAcknowledge = ack;
+        this.packages[ack.id - 1].status = 'gotAck';
     }
 
     drawSender = (ctx) => {
@@ -59,7 +70,7 @@ export default class Sender {
 
     drawSentPackages = (ctx) => {
 
-        this.packages.forEach((p) => {
+        this.packagesSent.forEach((p) => {
             //Draw Line
             ctx.moveTo(p.fromX, p.fromY);
             ctx.lineTo(p.toX, p.toY);
@@ -88,5 +99,15 @@ export default class Sender {
     draw = (ctx) => {
         this.drawSender(ctx);
         this.drawSentPackages(ctx);
+    }
+
+    getY = () => {
+        if (this.yCounter === this.packagesSent.length) {
+            this.lastY += 60;
+            return this.lastY;
+        }
+
+        this.lastY = this.packagesSent[this.yCounter++].toY;
+        return this.lastY;
     }
 }

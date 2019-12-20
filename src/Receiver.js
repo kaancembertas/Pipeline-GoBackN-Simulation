@@ -2,7 +2,7 @@ import consts from './Constants.js';
 import App from './App';
 
 export default class Receiver {
-    constructor(propagationDelay) {
+    constructor(propagationDelay, windowSize) {
         this.coords = {
             X: (consts.WIDTH - consts.RECT_WIDTH + consts.SPACE) / 2,
             Y: 20,
@@ -12,6 +12,8 @@ export default class Receiver {
         this.acknowledges = []; //Acknowledges Sent
         this.propagationDelay = propagationDelay;
         this.packagesGot = [];
+        this.windowIndex = 0;
+        this.windowSize = windowSize;
 
     }
 
@@ -33,11 +35,12 @@ export default class Receiver {
 
     sendAcknowledge = (p) => {
         const loss = this.isLossAck();
+        if (p.loss) this.sender.getY();
         const ack = {
             id: p.id,
             loss: loss,
             fromX: this.coords.lineX,
-            fromY: p.toY,
+            fromY: this.sender.getY(),
             toX: this.sender.coords.lineX,
             toY: App.getReceiverY()
         };
@@ -47,8 +50,8 @@ export default class Receiver {
         if (!ack.loss)
             this.sender.getAcknowledge(ack);
         else {
-            App.getY();
-            App.getY();
+            //App.getY();
+            //App.getY();
         }
 
     }
