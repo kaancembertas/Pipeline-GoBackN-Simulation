@@ -33,7 +33,7 @@ export default class Sender {
     }
 
     sendPackage = (id, loss, dublicate) => {
-        console.log(loss);
+
         this.lastPackageSent = {
             id: id,
             loss: loss,

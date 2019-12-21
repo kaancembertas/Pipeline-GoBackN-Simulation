@@ -35,7 +35,7 @@ export default class Receiver {
 
     sendAcknowledge = (p) => {
         const loss = this.isLossAck();
-        if (p.loss) this.sender.getY();
+        if (p.id === 4) this.sender.getY();
         const ack = {
             id: p.id,
             loss: loss,

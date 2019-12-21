@@ -130,7 +130,6 @@ export default class App extends Component {
 
   startSendingPackages = () => {
     this.sendPackageLoop = setInterval(() => {
-      console.log(this.sender.yCounter);
       if (this.receiver.acknowledges.filter(ack => !ack.loss).length === this.packageCount) {
         clearInterval(this.sendPackageLoop);
         this.setState({ isStartedSimulation: false });
@@ -140,7 +139,8 @@ export default class App extends Component {
       //Slide window
       const index = this.sender.windowIndex;
       for (let i = index; i < index + this.windowSize; i++) {
-        if (this.sender.windowIndex + this.windowSize !== this.packageCount && this.sender.packages[i].status === 'gotAck') {
+        if (this.sender.windowIndex + this.windowSize !== this.packageCount &&
+          this.sender.packages[i].status === 'gotAck') {
           this.sender.windowIndex++;
         }
       }
