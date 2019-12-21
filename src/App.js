@@ -39,7 +39,7 @@ export default class App extends Component {
 
   }
 
-  initialize = (callback) => {
+  initialize = () => {
     //INPUTS
     App.lastY = 60;
     this.ber = parseInt(this.state.ber); //Bit Error Rate 10^-ber

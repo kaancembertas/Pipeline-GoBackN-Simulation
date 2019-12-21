@@ -14,7 +14,7 @@ export default class Receiver {
         this.packagesGot = [];
         this.windowIndex = 0;
         this.windowSize = windowSize;
-
+        this.ackCount = 0;
     }
 
     setSender = (s) => {
@@ -35,7 +35,12 @@ export default class Receiver {
 
     sendAcknowledge = (p) => {
         const loss = this.isLossAck();
-        if (p.id === 4) this.sender.getY();
+        this.ackCount++;
+        if (p.id !== this.ackCount) {
+            this.ackCount++;
+            this.sender.getY();
+            App.getY();
+        }
         const ack = {
             id: p.id,
             loss: loss,
