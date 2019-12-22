@@ -20,7 +20,6 @@ export default class Sender {
             });
         }
 
-
         this.propagationDelay = propagationDelay;
         this.yCounter = 0;
         this.windowSize = windowSize;
@@ -42,14 +41,12 @@ export default class Sender {
             toX: this.receiver.coords.lineX,
             toY: App.getY(),
             dublicate: dublicate,
+            status: 'none'
         };
         this.packagesSent.push(this.lastPackageSent);
 
         if (!this.lastPackageSent.loss)
             this.receiver.getPackage(this.lastPackageSent);
-
-
-
     }
 
     getAcknowledge = (ack) => {
@@ -91,6 +88,9 @@ export default class Sender {
             }
             else if (p.dublicate) {
                 ctx.fillText("Discard dublicate frame", p.toX + 5, p.toY + 5);
+            }
+            else if (p.status === 'discardFromReceiver') {
+                ctx.fillText("Discard from receiver", p.toX + 5, p.toY + 5);
             }
 
         });

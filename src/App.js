@@ -13,7 +13,7 @@ export default class App extends Component {
     this.state = {
       isStartedSimulation: false,
       //Inputs
-      ber: 2000,
+      ber: 2500,
       length: 801,
       pcount: 6,
       pdelay: 15,
@@ -122,7 +122,6 @@ export default class App extends Component {
   isPacketLoss = () => {
     if (this.bitCounter >= this.errorCounter * this.ber) {
       this.errorCounter++;
-      this.ber = 99999;
       return true;
     }
     return false;
@@ -130,7 +129,8 @@ export default class App extends Component {
 
   startSendingPackages = () => {
     this.sendPackageLoop = setInterval(() => {
-      if (this.receiver.acknowledges.filter(ack => !ack.loss).length === this.packageCount) {
+      console.log(...this.sender.packages)
+      if (this.receiver.acknowledges.filter(ack => !ack.loss && !ack.dublicate).length === this.packageCount) {
         clearInterval(this.sendPackageLoop);
         this.setState({ isStartedSimulation: false });
         return;
@@ -146,12 +146,22 @@ export default class App extends Component {
       }
 
       for (let i = this.sender.windowIndex; i < this.sender.windowIndex + this.windowSize; i++) {
-        if (this.sender.packages[i].status === "none") {
-          this.bitCounter += this.length;
-          this.sender.sendPackage(this.sender.packages[i].id, this.isPacketLoss(), false);
-          this.sender.packages[i].status = 'sent';
-          this.timeoutCounter[i] = 0;
+
+        if (this.timeoutCounter[i - this.sender.windowIndex] === this.timeout && this.sender.packages[i].status === 'sent') {
+          this.timeoutCounter[i - this.sender.windowIndex] = 0;
+          for (let i = this.sender.windowIndex; i < this.sender.windowIndex + this.windowSize; i++) {
+            this.sender.packages[i].status = 'resent';
+          }
         }
+        if (this.sender.packages[i].status === "none" || this.sender.packages[i].status === "resent") {
+          this.bitCounter += this.length;
+          this.sender.sendPackage(this.sender.packages[i].id, this.sender.packages[i].status != 'resent' && this.isPacketLoss(), false);
+          this.sender.packages[i].status = 'sent';
+          this.timeoutCounter[i - this.sender.windowIndex] = 0;
+        }
+
+
+        this.timeoutCounter[i - this.sender.windowIndex] += this.propagationDelay;
       }
 
     }, this.propagationDelay * consts.SPEED);

@@ -14,7 +14,8 @@ export default class Receiver {
         this.packagesGot = [];
         this.windowIndex = 0;
         this.windowSize = windowSize;
-        this.ackCount = 0;
+        this.incFlag = 0;
+        this.lastAck = { id: 0 }
     }
 
     setSender = (s) => {
@@ -22,8 +23,16 @@ export default class Receiver {
     }
     getPackage = (p) => {
         setTimeout(() => {
-            this.sendAcknowledge(p);
-            this.packagesGot.push(p.id);
+            if (p.id === this.lastAck.id + 1) {
+                this.sendAcknowledge(p, false);
+                this.packagesGot.push(p.id);
+                this.incFlag = 0;
+            }
+            else {
+                this.sendAcknowledge(this.lastAck, true);
+                p.status = 'discardFromReceiver';
+            }
+
         }, this.propagationDelay * consts.SPEED);
     }
 
@@ -33,17 +42,18 @@ export default class Receiver {
         return false;
     }
 
-    sendAcknowledge = (p) => {
+    sendAcknowledge = (p, dublicate) => {
         const loss = this.isLossAck();
-        this.ackCount++;
-        if (p.id !== this.ackCount) {
-            this.ackCount++;
+
+        if (dublicate && this.incFlag === 0) {
+            this.incFlag++;
             this.sender.getY();
             App.getY();
         }
         const ack = {
             id: p.id,
             loss: loss,
+            dublicate: dublicate,
             fromX: this.coords.lineX,
             fromY: this.sender.getY(),
             toX: this.sender.coords.lineX,
@@ -51,6 +61,7 @@ export default class Receiver {
         };
 
         this.acknowledges.push(ack);
+        this.lastAck = ack;
 
         if (!ack.loss)
             this.sender.getAcknowledge(ack);
@@ -82,6 +93,10 @@ export default class Receiver {
             else {
                 ctx.moveTo(a.fromX, a.fromY);
                 ctx.lineTo(a.toX, a.toY);
+
+                if (a.dublicate) {
+                    ctx.fillText("Ignore dublicate ack", a.toX - 170, a.toY + 4);
+                }
             }
 
 
@@ -93,9 +108,6 @@ export default class Receiver {
             ctx.rect(box.X - 3, box.Y - 15, 30, 20);
             ctx.font = "15px Arial";
             ctx.fillText("A" + a.id, box.X, box.Y);
-
-
-
         });
     }
 
