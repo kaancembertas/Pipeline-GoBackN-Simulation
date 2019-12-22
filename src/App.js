@@ -13,12 +13,12 @@ export default class App extends Component {
     this.state = {
       isStartedSimulation: false,
       //Inputs
-      ber: 1000,
-      length: 400,
-      pcount: 9,
-      pdelay: 15,
-      bandwidth: 8000,
-      windowSize: 4
+      ber: '',
+      length: '',
+      pcount: '',
+      pdelay: '',
+      bandwidth: '',
+      windowSize: ''
     }
   }
 
@@ -31,24 +31,27 @@ export default class App extends Component {
   startSimulation = () => {
     if (this.state.ber === '' || this.state.length === '' || this.state.pcount === '' || this.state.pdelay === '') return;
 
-    this.setState({ isStartedSimulation: true });
-    this.initialize();
-    this.startSimulatorLoop();
-    this.startSendingPackages();
-  }
-
-  initialize = () => {
     //INPUTS
     App.lastY = 120;
     this.ber = parseInt(this.state.ber); //Bit Error Rate 10^-ber
-
     this.length = parseInt(this.state.length); //Package Length
     this.packageCount = parseInt(this.state.pcount); //Number of Packages
     this.propagationDelay = parseInt(this.state.pdelay);
     this.rtt = 2 * this.propagationDelay; //Run Trip Time (ms)
     this.timeout = 2 * this.rtt; //Timeout
     this.bandwidth = this.state.bandwidth; //bits per sec
-    this.windowSize = this.state.windowSize;
+    this.windowSize = parseInt(this.state.windowSize) > this.packageCount ? this.packageCount : parseInt(this.state.windowSize);
+
+    //console.log(this.windowSize * this.length * Math.pow(10, 3) / this.propagationDelay);
+
+    this.initialize();
+    this.startSimulatorLoop();
+    this.startSendingPackages();
+    this.setState({ isStartedSimulation: true });
+  }
+
+  initialize = () => {
+
 
     //Set Devices
     this.sender = new Sender(this.propagationDelay, this.windowSize, this.packageCount);
@@ -200,6 +203,10 @@ export default class App extends Component {
       <label>  Bandwidth(bits/sec): </label>
       <input disabled={this.state.isStartedSimulation} type="number"
         onChange={(e) => this.setState({ bandwidth: e.target.value })} />
+
+      <label>  Window Size </label>
+      <input disabled={this.state.isStartedSimulation} type="number"
+        onChange={(e) => this.setState({ windowSize: e.target.value })} />
       <br />
       <br />
       <input disabled={this.state.isStartedSimulation} type="button" value="Start Simulation" onClick={() => this.startSimulation()} />
@@ -209,7 +216,7 @@ export default class App extends Component {
 
     return (
       <div className="App">
-
+        {form}
         <canvas
           ref={this.canvasRef}
           id="canvas"
