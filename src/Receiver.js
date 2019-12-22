@@ -5,7 +5,7 @@ export default class Receiver {
     constructor(propagationDelay, windowSize) {
         this.coords = {
             X: (consts.WIDTH - consts.RECT_WIDTH + consts.SPACE) / 2,
-            Y: 20,
+            Y: 100,
             lineX: ((consts.WIDTH - consts.RECT_WIDTH + consts.SPACE) / 2) + consts.RECT_WIDTH / 2
         }
 
@@ -14,8 +14,9 @@ export default class Receiver {
         this.packagesGot = [];
         this.windowIndex = 0;
         this.windowSize = windowSize;
-        this.incFlag = 0;
         this.lastAck = { id: 0 }
+        this.lastYQueue = [];
+        this.lastY = -1;
     }
 
     setSender = (s) => {
@@ -24,11 +25,12 @@ export default class Receiver {
     getPackage = (p) => {
         setTimeout(() => {
             if (p.id === this.lastAck.id + 1) {
-                this.sendAcknowledge(p, false);
                 this.packagesGot.push(p.id);
-                this.incFlag = 0;
+                this.lastYQueue.push(p.toY);
+                this.sendAcknowledge(p, false);
             }
             else {
+                this.lastYQueue.push(p.toY);
                 this.sendAcknowledge(this.lastAck, true);
                 p.status = 'discardFromReceiver';
             }
@@ -36,26 +38,13 @@ export default class Receiver {
         }, this.propagationDelay * consts.SPEED);
     }
 
-    isLossAck = () => {
-        if (Math.random() <= consts.LOSS_ACK_PROB)
-            return true;
-        return false;
-    }
 
     sendAcknowledge = (p, dublicate) => {
-        const loss = this.isLossAck();
-
-        if (dublicate && this.incFlag === 0) {
-            this.incFlag++;
-            this.sender.getY();
-            App.getY();
-        }
         const ack = {
             id: p.id,
-            loss: loss,
             dublicate: dublicate,
             fromX: this.coords.lineX,
-            fromY: this.sender.getY(),
+            fromY: this.getY(),
             toX: this.sender.coords.lineX,
             toY: App.getReceiverY()
         };
@@ -63,12 +52,7 @@ export default class Receiver {
         this.acknowledges.push(ack);
         this.lastAck = ack;
 
-        if (!ack.loss)
-            this.sender.getAcknowledge(ack);
-        else {
-            //App.getY();
-            //App.getY();
-        }
+        this.sender.getAcknowledge(ack);
 
     }
 
@@ -86,20 +70,12 @@ export default class Receiver {
     drawAcknowledges = (ctx) => {
         this.acknowledges.forEach((a) => {
             //Draw Line
-            if (a.loss) {
-                ctx.moveTo(a.fromX, a.fromY);
-                ctx.lineTo(a.toX + consts.SPACE / 2, a.toY - 15);
+            ctx.moveTo(a.fromX, a.fromY);
+            ctx.lineTo(a.toX, a.toY);
+
+            if (a.dublicate) {
+                ctx.fillText("Ignore dublicate ack", a.toX - 170, a.toY + 4);
             }
-            else {
-                ctx.moveTo(a.fromX, a.fromY);
-                ctx.lineTo(a.toX, a.toY);
-
-                if (a.dublicate) {
-                    ctx.fillText("Ignore dublicate ack", a.toX - 170, a.toY + 4);
-                }
-            }
-
-
             //Draw Package
             let box = {
                 X: (this.sender.coords.X + consts.RECT_WIDTH / 2) - 30,
@@ -114,5 +90,15 @@ export default class Receiver {
     draw = (ctx) => {
         this.drawReceiver(ctx);
         this.drawAcknowledges(ctx);
+    }
+
+    getY = () => {
+        if (this.lastYQueue.length !== 0) {
+            this.lastY = this.lastYQueue.shift();
+            return this.lastY;
+        }
+
+        this.lastY += 30;
+        return this.lastY;
     }
 }

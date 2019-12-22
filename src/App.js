@@ -13,9 +13,9 @@ export default class App extends Component {
     this.state = {
       isStartedSimulation: false,
       //Inputs
-      ber: 2500,
-      length: 801,
-      pcount: 6,
+      ber: 1000,
+      length: 400,
+      pcount: 9,
       pdelay: 15,
       bandwidth: 8000,
       windowSize: 4
@@ -35,13 +35,11 @@ export default class App extends Component {
     this.initialize();
     this.startSimulatorLoop();
     this.startSendingPackages();
-
-
   }
 
   initialize = () => {
     //INPUTS
-    App.lastY = 60;
+    App.lastY = 120;
     this.ber = parseInt(this.state.ber); //Bit Error Rate 10^-ber
 
     this.length = parseInt(this.state.length); //Package Length
@@ -58,10 +56,6 @@ export default class App extends Component {
     this.sender.setReceiver(this.receiver);
     this.receiver.setSender(this.sender);
 
-
-
-    //this.lastY = this.sender.coords.Y + consts.RECT_HEIGHT; STATIC
-
     //Time variables and Counters
     this.timeoutCounter = []; //(ms)
     for (let i = 0; i < this.windowSize; i++) this.timeoutCounter.push(0);
@@ -72,21 +66,27 @@ export default class App extends Component {
     this.bitCounter = 0;
   }
 
-  drawPackageQueue = () => {
+  drawWindow = () => {
     const width = 60;
     const height = 30;
-    const x = 5;
-    let y = 20;
-
+    let x = (consts.WIDTH - this.windowSize * width) / 2;
+    const y = 40;
     this.ctx.font = "15px Arial";
-    this.ctx.fillText("Package Queue", x, y);
-    y += 8;
-    this.sender.packages.forEach((p) => {
+    this.ctx.fillText("Window Elements", (consts.WIDTH / 2) - 55, 20);
+    for (let i = this.sender.windowIndex; i < this.sender.windowIndex + this.windowSize; i++) {
+      let status = '';
+      switch (this.sender.packages[i].status) {
+        case 'none': status = 'n'; break;
+        case 'sent': status = 's'; break;
+        case 'gotAck': status = 'ack'; break;
+        case 'resent': status = 'rs'; break;
+      }
       this.ctx.rect(x, y, width, height);
-      this.ctx.fillText("P" + p.id, x + 10, y + height - 8);
-      y += height;
+      this.ctx.fillText("P" + this.sender.packages[i].id + " | " + status
+        , x + 2, y + height - 10);
+      x += width;
+    }
 
-    });
   }
 
   drawSimulationData = () => {
@@ -95,7 +95,6 @@ export default class App extends Component {
     this.ctx.fillText("Simulation Time: " + this.simulationTime + "ms", 625, 40);
     this.ctx.fillText("Total Bits: " + this.bitCounter, 625, 60);
     this.ctx.fillText("Sucessfull Bits: " + (this.bitCounter - (this.errorCounter - 1) * this.length), 625, 80);
-    this.ctx.fillText("Timeout Counter: " + this.timeoutCounter + "ms", 625, 100);
   }
 
   drawOutput = () => {
@@ -109,10 +108,10 @@ export default class App extends Component {
     this.simulatorLoop = setInterval(() => {
       this.ctx.clearRect(0, 0, consts.WIDTH, consts.HEIGHT);
       this.ctx.beginPath();
-      //if (this.state.isStartedSimulation) this.drawPackageQueue();
-      //else this.drawOutput();
+      if (this.state.isStartedSimulation) this.drawWindow();
+      else this.drawOutput();
 
-      //this.drawSimulationData();
+      this.drawSimulationData();
       this.sender.draw(this.ctx);
       this.receiver.draw(this.ctx);
       this.ctx.stroke();
@@ -129,7 +128,6 @@ export default class App extends Component {
 
   startSendingPackages = () => {
     this.sendPackageLoop = setInterval(() => {
-      console.log(...this.sender.packages)
       if (this.receiver.acknowledges.filter(ack => !ack.loss && !ack.dublicate).length === this.packageCount) {
         clearInterval(this.sendPackageLoop);
         this.setState({ isStartedSimulation: false });
@@ -150,20 +148,20 @@ export default class App extends Component {
         if (this.timeoutCounter[i - this.sender.windowIndex] === this.timeout && this.sender.packages[i].status === 'sent') {
           this.timeoutCounter[i - this.sender.windowIndex] = 0;
           for (let i = this.sender.windowIndex; i < this.sender.windowIndex + this.windowSize; i++) {
-            this.sender.packages[i].status = 'resent';
+            if (this.sender.packages[i].status !== "gotAck")
+              this.sender.packages[i].status = 'resent';
           }
         }
         if (this.sender.packages[i].status === "none" || this.sender.packages[i].status === "resent") {
           this.bitCounter += this.length;
-          this.sender.sendPackage(this.sender.packages[i].id, this.sender.packages[i].status != 'resent' && this.isPacketLoss(), false);
+          this.sender.sendPackage(this.sender.packages[i].id, this.isPacketLoss(), false);
           this.sender.packages[i].status = 'sent';
           this.timeoutCounter[i - this.sender.windowIndex] = 0;
         }
-
-
         this.timeoutCounter[i - this.sender.windowIndex] += this.propagationDelay;
       }
-
+      this.masterClock++;
+      this.simulationTime += this.propagationDelay;
     }, this.propagationDelay * consts.SPEED);
 
 
@@ -224,5 +222,5 @@ export default class App extends Component {
   }
 }
 
-App.lastY = 60;
+App.lastY = 120;
 

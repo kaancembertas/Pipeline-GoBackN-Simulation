@@ -5,5 +5,4 @@ export default {
     RECT_WIDTH: 100,
     RECT_HEIGHT: 40,
     SPEED: 50,
-    LOSS_ACK_PROB: 0
 }

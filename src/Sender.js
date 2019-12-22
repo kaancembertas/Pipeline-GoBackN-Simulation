@@ -6,7 +6,7 @@ export default class Sender {
     constructor(propagationDelay, windowSize, packageCount) {
         this.coords = {
             X: (consts.WIDTH - consts.RECT_WIDTH - consts.SPACE) / 2,
-            Y: 20,
+            Y: 100,
             lineX: ((consts.WIDTH - consts.RECT_WIDTH - consts.SPACE) / 2) + consts.RECT_WIDTH / 2
         }
         this.packagesSent = []; //Packages Sent
@@ -101,13 +101,4 @@ export default class Sender {
         this.drawSentPackages(ctx);
     }
 
-    getY = () => {
-        if (this.yCounter === this.packagesSent.length) {
-            this.lastY += 60;
-            return this.lastY;
-        }
-
-        this.lastY = this.packagesSent[this.yCounter++].toY;
-        return this.lastY;
-    }
 }
