@@ -70,7 +70,7 @@ export default class App extends Component {
   }
 
   drawWindow = () => {
-    const width = 60;
+    const width = 80;
     const height = 30;
     let x = (consts.WIDTH - this.windowSize * width) / 2;
     const y = 40;
