@@ -102,7 +102,7 @@ export default class App extends Component {
 
   drawOutput = () => {
     this.ctx.fillText("OUTPUT", 5, 20);
-    this.ctx.fillText("Utilization: " + ((this.length / this.bandwidth) / (this.rtt + (this.length / this.bandwidth))).toFixed(6), 5, 40);
+    this.ctx.fillText("Utilization: " + (((this.length / this.bandwidth) / (this.rtt + (this.length / this.bandwidth))) * this.windowSize).toFixed(6), 5, 40);
     this.ctx.fillText("Throughput: " + (this.bitCounter / this.simulationTime).toFixed(3), 5, 60);
     this.ctx.fillText("Goodput: " + ((this.bitCounter - (this.errorCounter - 1) * this.length) / this.simulationTime).toFixed(3), 5, 80);
   }
