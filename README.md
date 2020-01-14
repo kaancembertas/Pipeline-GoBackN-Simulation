@@ -1,4 +1,4 @@
-# Sliding Window (Pipeline) Protocol Simulation
+# Sliding Window - Go Back N (Pipeline) Protocol Simulation
 ![Sliding Window](Simulation.png)
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
