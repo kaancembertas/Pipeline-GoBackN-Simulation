@@ -1,4 +1,6 @@
 # Sliding Window - Go Back N (Pipeline) Protocol Simulation
+The aim of this project to simulate flow control protocols in data communication such as Stop and Wait Protocol and Sliding Window (Pipelining).
+
 ![Sliding Window](Simulation.png)
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
